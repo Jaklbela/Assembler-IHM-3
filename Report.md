@@ -63,7 +63,155 @@ gcc -masm=intel \
 
 ### Оптимизированный код на ассемблере с комментариями и максимальным использованием регистров
 ``` assembly
-
+	.intel_syntax noprefix
+	.text
+	.globl	my_pow
+	.type	my_pow, @function
+my_pow:
+	endbr64
+	push	rbp
+	mov	rbp, rsp
+	movsd	QWORD PTR -8[rbp], xmm0
+	movsd	xmm0, QWORD PTR -8[rbp]
+	mulsd	xmm0, xmm0
+	mulsd	xmm0, QWORD PTR -8[rbp]
+	mulsd	xmm0, QWORD PTR -8[rbp]
+	mulsd	xmm0, QWORD PTR -8[rbp]
+	movq	rax, xmm0
+	movq	xmm0, rax
+	pop	rbp
+	ret
+	.size	my_pow, .-my_pow
+	.globl	max
+	.type	max, @function
+max:
+	endbr64
+	push	rbp
+	mov	rbp, rsp
+	movsd	QWORD PTR -8[rbp], xmm0
+	movsd	QWORD PTR -16[rbp], xmm1
+	movsd	xmm0, QWORD PTR -8[rbp]
+	comisd	xmm0, QWORD PTR -16[rbp]
+	jb	.L9
+	movsd	xmm0, QWORD PTR -8[rbp]
+	jmp	.L7
+.L9:
+	movsd	xmm0, QWORD PTR -16[rbp]
+.L7:
+	movq	rax, xmm0
+	movq	xmm0, rax
+	pop	rbp
+	ret
+	.size	max, .-max
+	.globl	root
+	.type	root, @function
+root:
+	endbr64
+	push	rbp
+	mov	rbp, rsp
+	push	r15
+	push	r14
+	push	r13
+	sub	rsp, 8
+	movsd	QWORD PTR -32[rbp], xmm0
+	mov	r13, QWORD PTR .LC0[rip]
+	movsd	xmm0, QWORD PTR .LC1[rip]
+	mov	rax, QWORD PTR -32[rbp]
+	movapd	xmm1, xmm0
+	movq	xmm0, rax
+	call	max
+	movq	rax, xmm0
+	mov	r15, rax
+	jmp	.L11
+.L14:
+	movq	xmm1, r13
+	movq	xmm0, r15
+	addsd	xmm0, xmm1
+	movsd	xmm1, QWORD PTR .LC2[rip]
+	divsd	xmm0, xmm1
+	movq	r14, xmm0
+	mov	rax, r14
+	movq	xmm0, rax
+	call	my_pow
+	movq	rax, xmm0
+	movq	xmm2, rax
+	comisd	xmm2, QWORD PTR -32[rbp]
+	jbe	.L17
+	mov	rax, r14
+	mov	r15, rax
+	jmp	.L11
+.L17:
+	mov	rax, r14
+	mov	r13, rax
+.L11:
+	movq	xmm0, r15
+	movq	xmm1, r13
+	subsd	xmm0, xmm1
+	comisd	xmm0, QWORD PTR .LC3[rip]
+	ja	.L14
+	mov	rax, r15
+	movq	xmm0, rax
+	add	rsp, 8
+	pop	r13
+	pop	r14
+	pop	r15
+	pop	rbp
+	ret
+	.size	root, .-root
+	.section	.rodata
+	.align 8
+.LC4:
+	.string	"Input the number not less than 0"
+.LC5:
+	.string	"%lf"
+.LC6:
+	.string	"Wrong number!"
+.LC7:
+	.string	"The root of the out of: %lf\n"
+	.text
+	.globl	main
+	.type	main, @function
+main:
+	endbr64
+	push	rbp
+	mov	rbp, rsp
+	push	r12
+	sub	rsp, 24
+	lea	rax, .LC4[rip]
+	mov	rdi, rax
+	call	puts@PLT
+	lea	rax, -24[rbp]
+	mov	rsi, rax
+	lea	rax, .LC5[rip]
+	mov	rdi, rax
+	mov	eax, 0
+	call	__isoc99_scanf@PLT
+	movsd	xmm1, QWORD PTR -24[rbp]
+	pxor	xmm0, xmm0
+	comisd	xmm0, xmm1
+	jbe	.L24
+	lea	rax, .LC6[rip]
+	mov	rdi, rax
+	call	puts@PLT
+	mov	eax, 0
+	jmp	.L22
+.L24:
+	mov	rax, QWORD PTR -24[rbp]
+	movq	xmm0, rax
+	call	root
+	movq	rax, xmm0
+	mov	r12, rax
+	mov	rax, r12
+	movq	xmm0, rax
+	lea	rax, .LC7[rip]
+	mov	rdi, rax
+	mov	eax, 1
+	call	printf@PLT
+	mov	eax, 0
+.L22:
+	mov	r12, QWORD PTR -8[rbp]
+	leave
+	ret
 ```
 ### Неоптимизированный код на ассемблере для сравнения с измененным
 ``` assembly
@@ -300,7 +448,7 @@ main:
 4:
 ```
 
-Заметим, что
+Заметим, что неоптимизированный файл занимает 3,56 Кб, в то время как размер нового составляет 2,46 Кб - на 1,1 Кб меньше, что означает значительное уменьшение размеров нового файла
 
 ### Тестовые прогоны
 
